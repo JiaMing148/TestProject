@@ -55,7 +55,7 @@ public class GameAvatar : MonoBehaviour
         }
 
         Shoot();
-        //SyncGunForward();
+        SyncGunForward();
         SyncForward();
     }
 
@@ -109,10 +109,18 @@ public class GameAvatar : MonoBehaviour
 
     private void SyncGunForward()
     {
-        var cameraForward = Camera.main.transform.InverseTransformDirection(Vector3.forward);
-        var worldPos = gun.transform.position + cameraForward;
-        gun.transform.LookAt(worldPos);
-        var pos = Camera.main.transform.position;
-        Debug.DrawLine(pos, pos + cameraForward, Color.red);
+        var startPos = Camera.main.transform.position;
+        var selfAngles = Camera.main.transform.localEulerAngles;
+        var cameraForward = Quaternion.Euler(selfAngles) * Vector3.forward;
+        var ray = new Ray(startPos, cameraForward);
+
+        if (Physics.Raycast(ray, out var hitInfo, 1000f, ~(1 << 6)))
+        {
+            gun.transform.LookAt(hitInfo.point);
+        }
+        else
+        {
+            gun.transform.rotation = Quaternion.identity;
+        }
     }
 }
