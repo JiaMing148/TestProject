@@ -18,16 +18,32 @@ public class GameAvatar : MonoBehaviour
         }
     }
 
+    private Rigidbody rb;
+
+    private Rigidbody Rb
+    {
+        get
+        {
+            if (rb == null)
+            {
+                rb = GetComponent<Rigidbody>();
+            }
+            return rb;
+        }
+    }
+
     [SerializeField]
     private Transform body;
 
     [SerializeField]
     private ShootBullet gun;
 
+    [SerializeField]
+    private float moveSpeed = 1f;
+
     private void Update()
     {
         CursorVisible = Input.GetKey(KeyCode.LeftAlt);
-        Move();
         if (Input.GetKeyDown(KeyCode.V))
         {
             gun.ChengeShootMode();
@@ -39,19 +55,28 @@ public class GameAvatar : MonoBehaviour
         }
 
         Shoot();
-        SyncGunForward();
+        //SyncGunForward();
+        SyncForward();
+    }
+
+    private void FixedUpdate()
+    {
+        Move();
     }
 
     private void Move()
     {
         var horizontal = Input.GetAxisRaw("Horizontal");
         var vertical = Input.GetAxisRaw("Vertical");
-        if (horizontal == 0f && vertical == 0f)
-        {
-            return;
-        }
+        var worldPos = transform.position;
+        var dir = new Vector3(horizontal, 0f, vertical) * Time.fixedDeltaTime * moveSpeed;
+        var selfAngles = Camera.main.transform.localEulerAngles;
+        dir = Quaternion.Euler(selfAngles) * dir;
+        dir.y = 0f;
+        var nextPos = worldPos + dir;
 
-        SyncForward();
+        Rb.MovePosition(nextPos);
+        body.transform.LookAt(nextPos);
     }
 
     private void Shoot()
@@ -59,7 +84,6 @@ public class GameAvatar : MonoBehaviour
         if (Input.GetMouseButtonDown(0))
         {
             gun.OnShoot();
-            SyncForward();
             return;
         }
 
@@ -68,16 +92,19 @@ public class GameAvatar : MonoBehaviour
             if (Input.GetMouseButton(0))
             {
                 gun.OnShoot();
-                SyncForward();
             }
         }
     }
 
     private void SyncForward()
     {
-        var angles = body.transform.localEulerAngles;
-        var cameraAngles = Camera.main.transform.localEulerAngles;
-        body.transform.localEulerAngles = new Vector3(angles.x, cameraAngles.y, angles.z);
+        var vertical = Input.GetAxisRaw("Vertical");
+        if (vertical > 0f)
+        {
+            var angles = body.transform.localEulerAngles;
+            var cameraAngles = Camera.main.transform.localEulerAngles;
+            body.transform.localEulerAngles = new Vector3(angles.x, cameraAngles.y, angles.z);
+        }
     }
 
     private void SyncGunForward()
